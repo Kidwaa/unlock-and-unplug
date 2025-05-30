@@ -1,7 +1,21 @@
 
-import { App } from '@capacitor/app';
-import { Device } from '@capacitor/device';
-import { Preferences } from '@capacitor/preferences';
+// Capacitor imports with fallbacks for web environment
+let App: any = null;
+let Device: any = null; 
+let Preferences: any = null;
+
+try {
+  // Dynamic imports to handle web environment where Capacitor isn't available
+  const { App: CapApp } = await import('@capacitor/app');
+  const { Device: CapDevice } = await import('@capacitor/device');
+  const { Preferences: CapPreferences } = await import('@capacitor/preferences');
+  
+  App = CapApp;
+  Device = CapDevice;
+  Preferences = CapPreferences;
+} catch (error) {
+  console.log('Capacitor not available - running in web mode');
+}
 
 export interface UsageStats {
   unlockAttempts: number;
@@ -27,12 +41,14 @@ class MobileService {
     this.settings = settings;
     this.onUnlockCallback = onUnlock;
 
-    // Listen for app state changes
-    App.addListener('appStateChange', ({ isActive }) => {
-      if (isActive && this.settings?.isEnabled) {
-        this.handleAppActivation();
-      }
-    });
+    // Listen for app state changes only if Capacitor is available
+    if (App) {
+      App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
+        if (isActive && this.settings?.isEnabled) {
+          this.handleAppActivation();
+        }
+      });
+    }
 
     this.isInitialized = true;
   }
@@ -72,9 +88,17 @@ class MobileService {
 
   async getUsageStats(): Promise<UsageStats> {
     try {
-      const { value } = await Preferences.get({ key: 'touchgrass_stats' });
-      if (value) {
-        return JSON.parse(value);
+      if (Preferences) {
+        const { value } = await Preferences.get({ key: 'touchgrass_stats' });
+        if (value) {
+          return JSON.parse(value);
+        }
+      } else {
+        // Fallback to localStorage for web
+        const value = localStorage.getItem('touchgrass_stats');
+        if (value) {
+          return JSON.parse(value);
+        }
       }
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -91,10 +115,15 @@ class MobileService {
 
   async saveUsageStats(stats: UsageStats) {
     try {
-      await Preferences.set({
-        key: 'touchgrass_stats',
-        value: JSON.stringify(stats)
-      });
+      if (Preferences) {
+        await Preferences.set({
+          key: 'touchgrass_stats',
+          value: JSON.stringify(stats)
+        });
+      } else {
+        // Fallback to localStorage for web
+        localStorage.setItem('touchgrass_stats', JSON.stringify(stats));
+      }
     } catch (error) {
       console.error('Error saving stats:', error);
     }
@@ -112,12 +141,14 @@ class MobileService {
 
   async getDeviceInfo() {
     try {
-      const info = await Device.getInfo();
-      return info;
+      if (Device) {
+        const info = await Device.getInfo();
+        return info;
+      }
     } catch (error) {
       console.error('Error getting device info:', error);
-      return null;
     }
+    return null;
   }
 
   async isNativePlatform(): Promise<boolean> {
