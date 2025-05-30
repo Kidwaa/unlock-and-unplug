@@ -20,9 +20,11 @@ interface ConfigureProps {
 
 const Configure = ({ settings, onSettingsChange }: ConfigureProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
+  const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPinUpdate, setShowPinUpdate] = useState(false);
+  const [currentPinVerified, setCurrentPinVerified] = useState(false);
 
   const availableApps = [
     'Phone', 'Messages', 'Emergency', 'Maps', 'Camera', 'Clock', 
@@ -50,13 +52,29 @@ const Configure = ({ settings, onSettingsChange }: ConfigureProps) => {
     updateSettings('emergencyApps', newApps);
   };
 
+  const verifyCurrentPin = () => {
+    if (currentPin === localSettings.userPin) {
+      setCurrentPinVerified(true);
+    }
+  };
+
   const handlePinUpdate = () => {
     if (newPin.length === 4 && newPin === confirmPin) {
       updateSettings('userPin', newPin);
+      setCurrentPin('');
       setNewPin('');
       setConfirmPin('');
       setShowPinUpdate(false);
+      setCurrentPinVerified(false);
     }
+  };
+
+  const cancelPinUpdate = () => {
+    setCurrentPin('');
+    setNewPin('');
+    setConfirmPin('');
+    setShowPinUpdate(false);
+    setCurrentPinVerified(false);
   };
 
   return (
@@ -123,37 +141,84 @@ const Configure = ({ settings, onSettingsChange }: ConfigureProps) => {
               
               {showPinUpdate && (
                 <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <Label htmlFor="new-pin">New PIN (4 digits)</Label>
-                    <Input
-                      id="new-pin"
-                      type="password"
-                      maxLength={4}
-                      value={newPin}
-                      onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                      placeholder="Enter new PIN"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="confirm-pin">Confirm PIN</Label>
-                    <Input
-                      id="confirm-pin"
-                      type="password"
-                      maxLength={4}
-                      value={confirmPin}
-                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                      placeholder="Confirm new PIN"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handlePinUpdate}
-                    disabled={newPin.length !== 4 || newPin !== confirmPin}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Update PIN
-                  </Button>
-                  {newPin.length === 4 && confirmPin.length === 4 && newPin !== confirmPin && (
-                    <p className="text-red-600 text-sm">PINs do not match</p>
+                  {!currentPinVerified ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="current-pin">Enter Current PIN</Label>
+                        <Input
+                          id="current-pin"
+                          type="password"
+                          maxLength={4}
+                          value={currentPin}
+                          onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          placeholder="Enter current PIN"
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          onClick={verifyCurrentPin}
+                          disabled={currentPin.length !== 4}
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          Verify PIN
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={cancelPinUpdate}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      {currentPin.length === 4 && currentPin !== localSettings.userPin && (
+                        <p className="text-red-600 text-sm">Incorrect PIN</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 text-green-600 text-sm mb-3">
+                        <span>✓ Current PIN verified</span>
+                      </div>
+                      <div>
+                        <Label htmlFor="new-pin">New PIN (4 digits)</Label>
+                        <Input
+                          id="new-pin"
+                          type="password"
+                          maxLength={4}
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          placeholder="Enter new PIN"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="confirm-pin">Confirm New PIN</Label>
+                        <Input
+                          id="confirm-pin"
+                          type="password"
+                          maxLength={4}
+                          value={confirmPin}
+                          onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          placeholder="Confirm new PIN"
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          onClick={handlePinUpdate}
+                          disabled={newPin.length !== 4 || newPin !== confirmPin}
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          Update PIN
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={cancelPinUpdate}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      {newPin.length === 4 && confirmPin.length === 4 && newPin !== confirmPin && (
+                        <p className="text-red-600 text-sm">PINs do not match</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
