@@ -17,6 +17,7 @@ const LockScreen = ({ settings, onUnlock }: LockScreenProps) => {
   const [pinInput, setPinInput] = useState('');
   const [retriesLeft, setRetriesLeft] = useState(settings.pinRetries);
   const [showError, setShowError] = useState(false);
+  const [startTime] = useState(Date.now());
 
   const emergencyAppIcons = {
     'Phone': <Phone className="w-8 h-8" />,
@@ -31,6 +32,9 @@ const LockScreen = ({ settings, onUnlock }: LockScreenProps) => {
       setPinInput('');
       
       if (newRetries <= 0) {
+        // Calculate pause duration before unlocking
+        const pauseDuration = (Date.now() - startTime) / 1000;
+        console.log(`Mindful pause completed: ${pauseDuration} seconds`);
         onUnlock();
       } else {
         setShowError(false);
@@ -49,6 +53,11 @@ const LockScreen = ({ settings, onUnlock }: LockScreenProps) => {
 
   const handleBackspace = () => {
     setPinInput(pinInput.slice(0, -1));
+  };
+
+  const handleEmergencyApp = (app: string) => {
+    console.log(`Opening emergency app: ${app}`);
+    // In a real mobile app, this would open the actual app
   };
 
   useEffect(() => {
@@ -122,7 +131,7 @@ const LockScreen = ({ settings, onUnlock }: LockScreenProps) => {
                 key={app}
                 variant="ghost"
                 className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 text-white"
-                onClick={() => console.log(`Opening ${app}`)}
+                onClick={() => handleEmergencyApp(app)}
               >
                 {emergencyAppIcons[app as keyof typeof emergencyAppIcons]}
               </Button>

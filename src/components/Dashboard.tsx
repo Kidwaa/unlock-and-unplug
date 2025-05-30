@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Settings, Shield, Smartphone, BarChart3, Play } from 'lucide-react';
+import { Leaf, Settings, Shield, Smartphone, BarChart3, Play, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { mobileService, UsageStats } from '../services/mobileService';
 
 interface DashboardProps {
   settings: {
@@ -13,9 +14,26 @@ interface DashboardProps {
     userPin: string;
   };
   onSimulateUnlock: () => void;
+  usageStats: UsageStats;
+  onRefreshStats: () => void;
 }
 
-const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
+const Dashboard = ({ settings, onSimulateUnlock, usageStats, onRefreshStats }: DashboardProps) => {
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    const checkPlatform = async () => {
+      const native = await mobileService.isNativePlatform();
+      setIsNative(native);
+    };
+    checkPlatform();
+  }, []);
+
+  const handleResetStats = async () => {
+    await mobileService.resetStats();
+    onRefreshStats();
+  };
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -25,8 +43,27 @@ const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
             <Leaf className="w-8 h-8 text-emerald-600" />
             <h1 className="text-3xl font-bold text-gray-900">TouchGrass</h1>
           </div>
-          <p className="text-gray-600">Mindful phone usage starts here</p>
+          <p className="text-gray-600">
+            {isNative ? 'Mindful phone usage on mobile' : 'Mindful phone usage demo'}
+          </p>
         </div>
+
+        {/* Platform Status */}
+        {!isNative && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start space-x-3">
+                <Smartphone className="w-5 h-5 text-orange-600 mt-1" />
+                <div>
+                  <p className="font-medium text-orange-900">Demo Mode</p>
+                  <p className="text-sm text-orange-700">
+                    You're viewing a demo. To get real unlock detection, run this as a mobile app on Android/iOS.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Status Cards */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -59,26 +96,48 @@ const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5 text-emerald-600" />
-                <span>Today's Stats</span>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-600" />
+                  <span>Today's Stats</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRefreshStats}
+                  className="h-8 w-8 p-0"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Unlock Attempts:</span>
-                  <span className="font-medium">12</span>
+                  <span className="font-medium">{usageStats.unlockAttempts}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Mindful Pauses:</span>
-                  <span className="font-medium">8</span>
+                  <span className="font-medium">{usageStats.mindfulPauses}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Time Saved:</span>
-                  <span className="font-medium text-emerald-600">24 minutes</span>
+                  <span className="font-medium text-emerald-600">{usageStats.timeSaved} minutes</span>
                 </div>
               </div>
+              {usageStats.unlockAttempts > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetStats}
+                    className="w-full text-xs"
+                  >
+                    Reset Stats
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -117,7 +176,10 @@ const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
             disabled={!settings.isEnabled}
           >
             <Play className="w-5 h-5 mr-2" />
-            {settings.isEnabled ? 'Simulate Unlock Experience' : 'Enable Protection First'}
+            {settings.isEnabled 
+              ? (isNative ? 'Test Mindful Pause' : 'Simulate Unlock Experience')
+              : 'Enable Protection First'
+            }
           </Button>
           
           <Link to="/configure">
@@ -133,13 +195,19 @@ const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="font-medium text-blue-900">How TouchGrass Works</p>
                 <p className="text-sm text-blue-700">
-                  When you unlock your phone, TouchGrass creates a mindful pause by requiring you to 
-                  re-enter your PIN. This brief moment helps you be intentional about your phone usage 
-                  while still allowing emergency access to essential apps.
+                  {isNative 
+                    ? "TouchGrass detects when you unlock your phone and creates a mindful pause by requiring you to re-enter your PIN. This brief moment helps you be intentional about your phone usage while still allowing emergency access to essential apps."
+                    : "When deployed as a mobile app, TouchGrass will detect when you unlock your phone and create a mindful pause by requiring you to re-enter your PIN. This demo shows how the experience works."
+                  }
                 </p>
+                {isNative && (
+                  <p className="text-xs text-blue-600 mt-2">
+                    Time saved calculation: Based on pause duration + estimated 30% reduction in session time due to mindfulness.
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
