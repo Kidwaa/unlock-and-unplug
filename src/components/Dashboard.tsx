@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Smartphone, BarChart3, Leaf, Play } from 'lucide-react';
+import { Leaf, Settings, Shield, Smartphone, BarChart3, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface DashboardProps {
@@ -10,6 +10,7 @@ interface DashboardProps {
     pinRetries: number;
     emergencyApps: string[];
     isEnabled: boolean;
+    userPin: string;
   };
   onSimulateUnlock: () => void;
 }
@@ -19,127 +20,128 @@ const Dashboard = ({ settings, onSimulateUnlock }: DashboardProps) => {
     <div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center space-x-3">
             <Leaf className="w-8 h-8 text-emerald-600" />
             <h1 className="text-3xl font-bold text-gray-900">TouchGrass</h1>
           </div>
-          <Link to="/settings">
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+          <p className="text-gray-600">Mindful phone usage starts here</p>
+        </div>
+
+        {/* Status Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className={`border-2 ${settings.isEnabled ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200'}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className={`w-5 h-5 ${settings.isEnabled ? 'text-emerald-600' : 'text-gray-400'}`} />
+                <span>Protection Status</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Status:</span>
+                  <span className={`font-medium ${settings.isEnabled ? 'text-emerald-600' : 'text-gray-500'}`}>
+                    {settings.isEnabled ? 'Active' : 'Disabled'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">PIN Entries:</span>
+                  <span className="font-medium">{settings.pinRetries}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Emergency Apps:</span>
+                  <span className="font-medium">{settings.emergencyApps.length}/3</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5 text-emerald-600" />
+                <span>Today's Stats</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Unlock Attempts:</span>
+                  <span className="font-medium">12</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Mindful Pauses:</span>
+                  <span className="font-medium">8</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Time Saved:</span>
+                  <span className="font-medium text-emerald-600">24 minutes</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Emergency Apps Preview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Smartphone className="w-5 h-5 text-emerald-600" />
+              <span>Emergency Apps</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {settings.emergencyApps.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {settings.emergencyApps.map((app) => (
+                  <span
+                    key={app}
+                    className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm"
+                  >
+                    {app}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No emergency apps configured</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <Button
+            onClick={onSimulateUnlock}
+            className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white"
+            disabled={!settings.isEnabled}
+          >
+            <Play className="w-5 h-5 mr-2" />
+            {settings.isEnabled ? 'Simulate Unlock Experience' : 'Enable Protection First'}
+          </Button>
+          
+          <Link to="/configure">
+            <Button variant="outline" className="h-14 w-full border-emerald-200 hover:bg-emerald-50">
+              <Settings className="w-5 h-5 mr-2" />
+              Configure Settings
             </Button>
           </Link>
         </div>
 
-        {/* Status Card */}
-        <Card className="bg-gradient-to-r from-emerald-500 to-green-600 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">
-                  {settings.isEnabled ? 'Protection Active' : 'Protection Disabled'}
-                </h2>
-                <p className="text-emerald-100">
-                  {settings.isEnabled 
-                    ? `${settings.pinRetries} PIN entries required after unlock`
-                    : 'Your phone unlocks normally'
-                  }
+        {/* Info Card */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-3">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="space-y-1">
+                <p className="font-medium text-blue-900">How TouchGrass Works</p>
+                <p className="text-sm text-blue-700">
+                  When you unlock your phone, TouchGrass creates a mindful pause by requiring you to 
+                  re-enter your PIN. This brief moment helps you be intentional about your phone usage 
+                  while still allowing emergency access to essential apps.
                 </p>
               </div>
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                settings.isEnabled ? 'bg-white/20' : 'bg-white/10'
-              }`}>
-                <Smartphone className="w-8 h-8" />
-              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Demo Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Play className="w-5 h-5 text-emerald-600" />
-              <span>Try the Experience</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">
-              Experience how TouchGrass works by simulating a phone unlock.
-            </p>
-            <Button 
-              onClick={onSimulateUnlock}
-              className="bg-emerald-600 hover:bg-emerald-700"
-              disabled={!settings.isEnabled}
-            >
-              Simulate Phone Unlock
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Today's Pauses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">12</div>
-              <p className="text-sm text-gray-600">Mindful moments created</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Time Saved</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">47m</div>
-              <p className="text-sm text-gray-600">Estimated screen time reduced</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Streak</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-emerald-600 mb-2">5 days</div>
-              <p className="text-sm text-gray-600">Consistent mindful usage</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Emergency Apps */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Emergency Apps</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-4">
-              {settings.emergencyApps.map((app, index) => (
-                <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-emerald-600 font-semibold">
-                      {app.charAt(0)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">{app}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tips */}
-        <Card className="bg-emerald-50 border-emerald-200">
-          <CardContent className="p-6">
-            <h3 className="font-semibold text-emerald-800 mb-2">💡 Mindful Tech Tips</h3>
-            <p className="text-emerald-700 text-sm">
-              Remember: The goal isn't to never use your phone, but to use it intentionally. 
-              Each pause is an opportunity to check in with yourself.
-            </p>
           </CardContent>
         </Card>
       </div>

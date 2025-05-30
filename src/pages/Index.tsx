@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LockScreen from '../components/LockScreen';
-import Settings from '../components/Settings';
+import Configure from '../components/Configure';
 import Dashboard from '../components/Dashboard';
 import Onboarding from '../components/Onboarding';
 
@@ -61,8 +60,8 @@ const Index = () => {
             onSimulateUnlock={simulateUnlock}
           />
         } />
-        <Route path="/settings" element={
-          <Settings 
+        <Route path="/configure" element={
+          <Configure 
             settings={settings} 
             onSettingsChange={setSettings}
           />
