@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LockScreen from '../components/LockScreen';
 import Settings from '../components/Settings';
 import Dashboard from '../components/Dashboard';
@@ -54,23 +54,21 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
-      <Router>
-        <Routes>
-          <Route path="/" element={
-            <Dashboard 
-              settings={settings} 
-              onSimulateUnlock={simulateUnlock}
-            />
-          } />
-          <Route path="/settings" element={
-            <Settings 
-              settings={settings} 
-              onSettingsChange={setSettings}
-            />
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="/" element={
+          <Dashboard 
+            settings={settings} 
+            onSimulateUnlock={simulateUnlock}
+          />
+        } />
+        <Route path="/settings" element={
+          <Settings 
+            settings={settings} 
+            onSettingsChange={setSettings}
+          />
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 };
