@@ -1,22 +1,4 @@
 
-// Capacitor imports with fallbacks for web environment
-let App: any = null;
-let Device: any = null; 
-let Preferences: any = null;
-
-try {
-  // Dynamic imports to handle web environment where Capacitor isn't available
-  const { App: CapApp } = await import('@capacitor/app');
-  const { Device: CapDevice } = await import('@capacitor/device');
-  const { Preferences: CapPreferences } = await import('@capacitor/preferences');
-  
-  App = CapApp;
-  Device = CapDevice;
-  Preferences = CapPreferences;
-} catch (error) {
-  console.log('Capacitor not available - running in web mode');
-}
-
 export interface UsageStats {
   unlockAttempts: number;
   mindfulPauses: number;
@@ -30,10 +12,35 @@ export interface UnlockSession {
   pauseDuration: number; // in seconds
 }
 
+// Function to safely import Capacitor modules
+async function importCapacitorModules() {
+  try {
+    const [appModule, deviceModule, preferencesModule] = await Promise.all([
+      import('@capacitor/app').catch(() => null),
+      import('@capacitor/device').catch(() => null),
+      import('@capacitor/preferences').catch(() => null)
+    ]);
+
+    return {
+      App: appModule?.App || null,
+      Device: deviceModule?.Device || null,
+      Preferences: preferencesModule?.Preferences || null
+    };
+  } catch (error) {
+    console.log('Capacitor not available - running in web mode');
+    return {
+      App: null,
+      Device: null,
+      Preferences: null
+    };
+  }
+}
+
 class MobileService {
   private isInitialized = false;
   private settings: any = null;
   private onUnlockCallback: (() => void) | null = null;
+  private capacitorModules: any = null;
 
   async initialize(settings: any, onUnlock: () => void) {
     if (this.isInitialized) return;
@@ -41,9 +48,12 @@ class MobileService {
     this.settings = settings;
     this.onUnlockCallback = onUnlock;
 
+    // Import Capacitor modules
+    this.capacitorModules = await importCapacitorModules();
+
     // Listen for app state changes only if Capacitor is available
-    if (App) {
-      App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
+    if (this.capacitorModules.App) {
+      this.capacitorModules.App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
         if (isActive && this.settings?.isEnabled) {
           this.handleAppActivation();
         }
@@ -88,8 +98,8 @@ class MobileService {
 
   async getUsageStats(): Promise<UsageStats> {
     try {
-      if (Preferences) {
-        const { value } = await Preferences.get({ key: 'touchgrass_stats' });
+      if (this.capacitorModules?.Preferences) {
+        const { value } = await this.capacitorModules.Preferences.get({ key: 'touchgrass_stats' });
         if (value) {
           return JSON.parse(value);
         }
@@ -115,8 +125,8 @@ class MobileService {
 
   async saveUsageStats(stats: UsageStats) {
     try {
-      if (Preferences) {
-        await Preferences.set({
+      if (this.capacitorModules?.Preferences) {
+        await this.capacitorModules.Preferences.set({
           key: 'touchgrass_stats',
           value: JSON.stringify(stats)
         });
@@ -141,8 +151,8 @@ class MobileService {
 
   async getDeviceInfo() {
     try {
-      if (Device) {
-        const info = await Device.getInfo();
+      if (this.capacitorModules?.Device) {
+        const info = await this.capacitorModules.Device.getInfo();
         return info;
       }
     } catch (error) {
